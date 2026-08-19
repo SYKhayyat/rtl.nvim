@@ -32,6 +32,11 @@ jobs:
         run: >-
           "${{ steps.nvim.outputs.executable }}" --headless -u NONE -l tests/spec.lua
 
+      - name: Lua syntax check (plugin and example config)
+        shell: bash
+        run: >-
+          "${{ steps.nvim.outputs.executable }}" --headless -u NONE -l tests/lint.lua
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
