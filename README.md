@@ -88,7 +88,7 @@ terminals (including Windows Terminal) do nothing, which is what you want.
 
 ```lua
 {
-  "USER/rtl.nvim",
+  "SYKhayyat/rtl.nvim",
   ft = { "markdown", "text", "tex" },   -- or drop this to always load
   opts = {},
 }
@@ -97,7 +97,7 @@ terminals (including Windows Terminal) do nothing, which is what you want.
 **packer.nvim**
 
 ```lua
-use { "USER/rtl.nvim", config = function() require("rtl").setup() end }
+use { "SYKhayyat/rtl.nvim", config = function() require("rtl").setup() end }
 ```
 
 **No plugin manager** — clone anywhere on your `runtimepath` and call
