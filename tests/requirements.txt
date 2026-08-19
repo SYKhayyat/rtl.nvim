@@ -1,2 +1,7 @@
-pyte>=0.8.1
-pywinpty>=2.0.13 ; sys_platform == "win32"
+# Pinned exactly rather than with >= bounds: this harness drives a real Neovim
+# inside a pty and reads the rendered grid, so a terminal-emulator or pty
+# library that changes behaviour changes the test results rather than failing
+# to install. CI resolves this file, so the versions here are what the results
+# were produced against.
+pyte==0.8.2
+pywinpty==3.0.5 ; sys_platform == "win32"
