@@ -58,11 +58,20 @@ return {
 
   -- Tree-sitter is foundational in Neovim in a way it is not in Emacs:
   -- highlighting, indent, and textobjects all hang off it.
+  --
+  -- Pinned to master deliberately. The default branch is now `main`, a
+  -- rewrite that drops `nvim-treesitter.configs` along with the
+  -- incremental-selection and indent modules -- and incremental selection is
+  -- the expand-region replacement this config promises. master is stable and
+  -- still maintained; revisit when the rewrite grows those back.
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "master",
     build = ":TSUpdate",
     event = { "BufReadPost", "BufNewFile" },
-    dependencies = { "nvim-treesitter/nvim-treesitter-textobjects" },
+    dependencies = {
+      { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
+    },
     main = "nvim-treesitter.configs",
     opts = {
       ensure_installed = {

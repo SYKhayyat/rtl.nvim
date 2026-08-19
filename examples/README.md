@@ -36,7 +36,7 @@ missing.
 | which-key | **which-key.nvim** | Same plugin, same role |
 | **eglot** | built-in `vim.lsp` + nvim-lspconfig | In-tree, minimal config — the same reason you picked eglot over lsp-mode |
 | (server binaries by hand) | **mason.nvim** | Worth more on Windows than on NixOS |
-| tree-sitter (barely used) | **nvim-treesitter** | Foundational here: highlight, indent, textobjects, incremental selection |
+| tree-sitter (barely used) | **nvim-treesitter** (pinned to `master`) | Foundational here: highlight, indent, textobjects, incremental selection. See the note below on the branch |
 | magit | **neogit** + diffview | Explicit magit port, popup-driven |
 | git-gutter | **gitsigns.nvim** | Plus hunk staging git-gutter never had |
 | git-timemachine | `DiffviewFileHistory` | |
@@ -65,6 +65,16 @@ missing.
 | savehist / recentf / save-place | shada (built in) + persistence.nvim | |
 | editorconfig, so-long | built in since 0.9 | |
 | gcmh, diminish, restart-emacs | not needed | |
+
+### The nvim-treesitter branch pin
+
+`nvim-treesitter` is pinned to `branch = "master"`. Its default branch is now
+`main`, a rewrite that removes `nvim-treesitter.configs` entirely along with
+the incremental-selection and indent modules. Incremental selection is this
+config's `expand-region` replacement, so master it is. This was not a
+precaution — the unpinned spec was installed, it broke on the first buffer
+read, and pinning is the fix. Revisit when the rewrite grows those modules
+back.
 
 ### Deliberately not included
 
