@@ -24,11 +24,11 @@ jobs:
 
       - name: Report RTL support in this Neovim
         shell: bash
-        run: ${{ steps.nvim.outputs.executable }} --headless -u NONE -l tests/probe.lua
+        run: "${{ steps.nvim.outputs.executable }}" --headless -u NONE -l tests/probe.lua
 
       - name: Behaviour tests
         shell: bash
-        run: ${{ steps.nvim.outputs.executable }} --headless -u NONE -l tests/spec.lua
+        run: "${{ steps.nvim.outputs.executable }}" --headless -u NONE -l tests/spec.lua
 
       - uses: actions/setup-python@v5
         with:
