@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        nvim: [stable, nightly]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: rhysd/action-setup-vim@v1
+        id: nvim
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+
+      - name: Report RTL support in this Neovim
+        shell: bash
+        run: ${{ steps.nvim.outputs.executable }} --headless -u NONE -l tests/probe.lua
+
+      - name: Behaviour tests
+        shell: bash
+        run: ${{ steps.nvim.outputs.executable }} --headless -u NONE -l tests/spec.lua
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install render harness deps
+        run: python -m pip install -r tests/requirements.txt
+
+      - name: Rendered screen grids
+        shell: bash
+        env:
+          NVIM: ${{ steps.nvim.outputs.executable }}
+        run: python tests/render.py --plugin

@@ -1,0 +1,208 @@
+*rtl.txt*    Right-to-left writing support for Neovim
+
+==============================================================================
+CONTENTS                                                         *rtl-contents*
+
+    1. Introduction ......................... |rtl-introduction|
+    2. Scope and limits ..................... |rtl-limits|
+    3. Commands ............................. |rtl-commands|
+    4. Configuration ........................ |rtl-config|
+    5. Detection ............................ |rtl-detection|
+    6. Terminals and fonts .................. |rtl-terminals|
+    7. Lua API .............................. |rtl-api|
+    8. Testing .............................. |rtl-testing|
+
+==============================================================================
+1. INTRODUCTION                                              *rtl-introduction*
+
+Neovim has shipped the pieces of right-to-left layout for years: 'rightleft',
+'rightleftcmd', 'revins', 'keymap', 'delcombine'. What it has never shipped is
+anything that decides when to turn them on.
+
+rtl.nvim is that decision, plus the bookkeeping the option scoping forces on
+you. 'rightleft' is a window option and 'keymap' is a buffer option, so a
+naive "set it once" configuration leaves the entire editor mirrored the moment
+you open a second file in the same window.
+
+==============================================================================
+2. SCOPE AND LIMITS                                                *rtl-limits*
+
+This plugin gives right-to-left LAYOUT. It does not give you the Unicode
+bidirectional algorithm, because Neovim does not implement one.
+
+'rightleft' mirrors the window: it reverses the cell order so that column 0 is
+on the right. That is all it does. There are no embedding levels, no
+resolution of neutral characters, no distinction between logical and visual
+order in the buffer model.
+
+The practical split:
+
+  Monolingual RTL prose      renders correctly.
+  Mixed RTL and Latin        one script renders backwards.
+
+The second case is not a bug in this plugin and no option fixes it. A line
+such as >
+
+    mixed line: עברית and English (42)
+
+renders under 'rightleft' as >
+
+    )24( hsilgnE dna תירבע :enil dexim
+
+The Hebrew is right; the Latin run, the parentheses and the digits are
+reversed, because nothing reordered them.
+
+Two genuinely separate problems get conflated here, and it is worth keeping
+them apart:
+
+  Reordering    deciding visual order from logical order. Needs FriBidi or
+                ICU. This is what is missing.
+  Shaping       positioning combining marks. Hebrew does not need Arabic-style
+                joining, but nikud and cantillation are zero-width combining
+                codepoints that must stack under the base letter, and a
+                character-cell grid has no notion of "underneath".
+
+Fixing either properly means doing the work in a GUI frontend over the UI
+protocol (|ui|), not in Neovim core: keep the buffer purely logical, run
+FriBidi for levels and HarfBuzz for shaping in the frontend, and paint glyph
+runs rather than a fixed cell grid. The harder half is not rendering but
+editing semantics -- at a direction boundary one buffer position has two valid
+screen positions, so |l|, |f|, |%| and visual-block selection all need a
+convention, and every plugin that computes a screen column acquires a bug.
+
+If you need correct mixed-script rendering today, use an editor with a real
+text-shaping stack. Emacs implements the full algorithm.
+
+==============================================================================
+3. COMMANDS                                                      *rtl-commands*
+
+                                                                     *:Hebrew*
+:Hebrew         Turn on RTL layout for the current buffer. Overrides
+                detection, and is remembered for that buffer.
+
+                                                                    *:English*
+:English        Turn off RTL layout for the current buffer. Same persistence.
+
+                                                                  *:RtlToggle*
+:RtlToggle      Flip the current buffer. Bound to <F8> by default in both
+                normal and insert mode.
+
+Commands are available without calling |rtl.setup()|. Auto-detection is not.
+
+==============================================================================
+4. CONFIGURATION                                                   *rtl-config*
+
+>lua
+    require("rtl").setup({
+      auto_detect = true,
+      sample_lines = 50,
+      keymap = "hebrew",
+      rightleftcmd = "search",
+      revins = false,
+      toggle_key = "<F8>",
+      prose_filetypes = {
+        markdown = true, text = true, tex = true, asciidoc = true,
+      },
+      filename_pattern = "%.he%.",
+    })
+<
+auto_detect        Decide RTL from buffer contents on read. See
+                   |rtl-detection|.
+
+sample_lines       How many lines the heuristic reads.
+
+keymap             Value for 'keymap' when RTL is on. Neovim ships "hebrew"
+                   (standard Israeli layout) and "hebrewp" (phonetic). Set to
+                   false to leave 'keymap' alone and use your OS layout.
+
+rightleftcmd       Value for 'rightleftcmd' when RTL is on. "search" mirrors
+                   the |/| prompt.
+
+revins             Off on purpose. With 'rightleft' the cursor already
+                   advances leftward and enabling both cancels out. Exposed
+                   only for completeness.
+
+toggle_key         Mapping for |:RtlToggle|, or false to skip it.
+
+prose_filetypes    Filetypes for which filename_pattern is honoured.
+
+filename_pattern   Lua pattern; a prose file whose name matches is forced RTL
+                   regardless of contents. Default matches "notes.he.md".
+
+==============================================================================
+5. DETECTION                                                    *rtl-detection*
+
+The heuristic counts RTL versus Latin letters in the first `sample_lines`
+lines of the buffer and marks it RTL when RTL letters are in the majority.
+
+The count is byte-level rather than codepoint-level, deliberately: LuaJIT has
+no `utf8` library, and the relevant ranges are compact in UTF-8 lead bytes --
+Hebrew U+0590-U+05FF is 0xD6/0xD7, Arabic U+0600-U+06FF is 0xD8 through 0xDB.
+For a heuristic the lead byte alone is signal enough, and it avoids decoding
+every line on every read.
+
+The decision is stored per buffer, not per window, and re-applied on
+|BufWinEnter|. That is what keeps a split showing Hebrew in one window and
+Lua in another from fighting over 'rightleft'.
+
+==============================================================================
+6. TERMINALS AND FONTS                                          *rtl-terminals*
+
+Neovim performs the mirroring itself, emitting cells in reversed order. Your
+terminal must therefore NOT also apply bidi, or the two passes cancel and the
+result is worse than either alone. Most terminals do nothing, which is the
+correct behaviour here. mlterm is the notable exception that tries.
+
+'termbidi' exists in Neovim and tells it the terminal handles bidi so it
+should not. Setting it is only correct if your terminal genuinely does.
+
+Nikud rendering is a font question. Neovim will hand the combining codepoints
+to the terminal attached to their base character; whether they stack legibly
+depends on the font's mark-positioning tables and on whether your terminal
+honours them at all.
+
+==============================================================================
+7. LUA API                                                            *rtl-api*
+
+rtl.setup({opts})                                               *rtl.setup()*
+                Configure and install autocommands. See |rtl-config|.
+
+rtl.set({on})                                                     *rtl.set()*
+                Apply or remove RTL for the current window and buffer. Does
+                not record the choice.
+
+rtl.override({on}, {buf})                                    *rtl.override()*
+                Apply RTL and remember it against {buf} (default: current), so
+                it survives switching away and back.
+
+rtl.toggle()                                                   *rtl.toggle()*
+                Flip the current buffer and notify.
+
+rtl.is_rtl({buf})                                             *rtl.is_rtl()*
+                Whether {buf} is currently marked RTL.
+
+rtl.detect({buf}, {sample})                                    *rtl.detect()*
+                Run the heuristic against {buf} without applying anything.
+
+==============================================================================
+8. TESTING                                                        *rtl-testing*
+
+>
+    nvim --headless -u NONE -l tests/spec.lua
+    nvim --headless -u NONE -l tests/probe.lua
+    python tests/render.py --plugin
+<
+spec.lua exercises detection, the window-option leakage regression, and
+override persistence. It exits non-zero on failure.
+
+probe.lua reports which RTL options and runtime keymaps your Neovim actually
+has. Run it before believing anything written about Vim's RTL support,
+including this file -- the answer has changed across versions.
+
+render.py drives real Neovim inside a pty and prints the rendered screen grid,
+which is the only way to verify RTL: the feature changes which screen cell a
+character lands in, and no amount of option inspection will show that. It
+answers Neovim's startup terminal-capability probes (DA1, DECRQSS, DECRQM,
+OSC 11, DSR), without which Neovim blocks and never draws.
+
+ vim:tw=78:ts=8:noet:ft=help:norl:
