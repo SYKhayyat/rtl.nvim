@@ -12,4 +12,21 @@ for _, f in ipairs(files) do
   end
 end
 print(string.format("\n%d files, %d syntax errors", #files, bad))
+
+-- The example config is pinned; the lockfile is the pin. Losing it silently
+-- would turn a frozen config back into a floating one.
+local lock = "examples/lazy-lock.json"
+if vim.fn.filereadable(lock) == 1 then
+  local ok, decoded = pcall(vim.json.decode, table.concat(vim.fn.readfile(lock), "\n"))
+  if ok and type(decoded) == "table" then
+    print(string.format("lockfile ok: %d plugins pinned", vim.tbl_count(decoded)))
+  else
+    bad = bad + 1
+    print("LOCKFILE INVALID  " .. lock)
+  end
+else
+  bad = bad + 1
+  print("LOCKFILE MISSING  " .. lock .. "  (the example config must stay pinned)")
+end
+
 if bad > 0 then vim.cmd("cquit 1") end

@@ -24,6 +24,56 @@ Windows), `node` for browser markdown preview, `ollama` for the AI chat.
 Everything guarded by `cond` skips itself cleanly when its dependency is
 missing.
 
+## Frozen by design
+
+This config is built to sit unattended and keep working. Nothing updates
+itself.
+
+- **`lazy-lock.json` is committed.** Every plugin is pinned to an exact
+  commit. A fresh install on a new machine reproduces those exact revisions,
+  not "whatever is on the default branch today".
+- **The update checker is off** (`checker = { enabled = false }`). lazy.nvim
+  never fetches in the background and never nags. Plugins move only when you
+  type `:Lazy update`.
+- **`rtl.nvim` is pinned to a tag** (`version = "v1.0.0"`) rather than
+  tracking `main`.
+- **nvim-treesitter is pinned to `branch = "master"`**, so a default-branch
+  change cannot swap it for an incompatible rewrite.
+
+This is not paranoia — both failures happened here, on the day this config was
+written. nvim-treesitter's default branch had already become an incompatible
+rewrite, and a grammar had already been dropped from its registry. One broke
+on the first buffer read; the other hung startup indefinitely. Automatic
+updates would have delivered both silently, months later, with no clue as to
+what changed.
+
+### Updating on purpose
+
+```vim
+:Lazy update          " fetch and update, rewriting lazy-lock.json
+```
+
+Then use it for a day. If something breaks:
+
+```vim
+:Lazy restore         " put every plugin back to lazy-lock.json
+```
+
+`:Lazy restore` is the whole safety net, and it works because the lockfile is
+in git. Commit `lazy-lock.json` again only once you are satisfied — that is
+what makes the new state the one you fall back to.
+
+### What the lockfile does not cover
+
+- **LSP server binaries installed by mason.** These live outside lazy.nvim and
+  are not pinned. If a language server update misbehaves, `:Mason` lets you
+  roll that one server back. Nothing else in the config depends on them.
+- **Tree-sitter parsers** are compiled from the pinned nvim-treesitter
+  revision, so they are effectively pinned with it.
+- **Neovim itself.** A major Neovim release can still break plugins. If this
+  config has to survive untended, stay on a stable Neovim release and update
+  it deliberately, the same way.
+
 ## The mapping
 
 | Emacs | Neovim | Note |

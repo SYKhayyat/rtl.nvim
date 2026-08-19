@@ -8,7 +8,8 @@
 return {
   {
     "SYKhayyat/rtl.nvim",
-    lazy = false,     -- detection has to run on every buffer read
+    version = "v1.0.0",   -- pinned; see "Frozen by design" in the README
+    lazy = false,         -- detection has to run on every buffer read
     priority = 900,
     opts = {
       toggle_key = "<leader>D",

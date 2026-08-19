@@ -22,10 +22,23 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- This config is FROZEN by design. See examples/README.md, "Frozen by
+-- design", for the reasoning and the update procedure.
+--
+-- lazy-lock.json pins every plugin to an exact commit and is committed to the
+-- repository. A fresh install reproduces those exact revisions, and nothing
+-- moves on its own: the update checker is off, so no plugin is ever fetched
+-- unless you type :Lazy update yourself.
+--
+-- Two upstream breakages hit this config on the day it was written --
+-- nvim-treesitter changed its default branch to an incompatible rewrite, and
+-- a grammar was removed from its registry. Both would have arrived silently
+-- through an automatic update.
 require("lazy").setup({
   spec = { { import = "plugins" } },
   install = { colorscheme = { "onedark", "habamax" } },
-  checker = { enabled = true, notify = false },
+  checker = { enabled = false },        -- never check for updates in the background
+  lockfile = vim.fn.stdpath("config") .. "/lazy-lock.json",
   change_detection = { notify = false },
   performance = {
     rtp = {
