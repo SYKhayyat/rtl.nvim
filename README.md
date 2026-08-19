@@ -48,34 +48,25 @@ python -m pip install -r tests/requirements.txt
 python tests/render.py --plugin
 ```
 
-Neovim's default, cell 0 on the left, so the first letter of שלום lands on the
-left — backwards for a Hebrew reader:
+Neovim's default puts cell 0 on the left, so the first letter of a Hebrew word
+lands on the left — backwards for a Hebrew reader. With the plugin, Neovim
+reverses the cell order itself and the text is right-aligned, which on screen
+is correct Hebrew.
 
-```
-|שלום עולם                                                 |
-|זה שורה שלישית בעברית                                     |
-|בְּרֵאשִׁית בָּרָא אֱלֹהִים                                          |
-|mixed line: עברית and English (42)                        |
-```
+Run the harness and read the grids in your own terminal. They are deliberately
+not reproduced here: a grid dump is in *visual* order, and any viewer that
+applies the bidirectional algorithm to this file — GitHub, your browser —
+reorders it again and shows you the opposite of what the dump says. The output
+is only trustworthy where it is produced.
 
-With the plugin, Neovim reverses the cell order itself. The grid content now
-reads `םלוע םולש` and is right-aligned, which on screen is correct Hebrew:
-
-```
-|                                                 םלוע םולש|
-|                                     תירבעב תישילש הרוש הז|
-|                                          םיהִלֹאֱ ארָבָּ תישִׁארֵבְּ|
-|                        )24( hsilgnE dna תירבע :enil dexim|
-```
-
-Three things that grid demonstrates rather than asserts:
+Three things the grids show rather than assert:
 
 1. Hebrew prose is correct.
-2. Nikud survives — `בְּרֵאשִׁית בָּרָא אֱלֹהִים` keeps its marks on the right base
-   letters. How well they *stack* is your font's problem, not Neovim's.
-3. The last line is the entire limitation in one row of output: the Hebrew is
-   right, and the English, the parentheses and the number are all reversed.
-   That is the absent bidi, visible.
+2. Nikud survives, with the marks staying on the right base letters. How well
+   they *stack* is your font's problem, not Neovim's.
+3. The mixed-script line is the entire limitation in one row of output: the
+   Hebrew is right, and the English, the parentheses and the number are all
+   reversed. That is the absent bidi, visible.
 
 One consequence worth knowing: Neovim does the mirroring itself, so your
 terminal must **not** also apply bidi or you get a double reversal. Most
