@@ -76,7 +76,11 @@ return {
     opts = {
       ensure_installed = {
         "lua", "vim", "vimdoc", "python", "rust", "toml", "json", "yaml",
-        "markdown", "markdown_inline", "org", "bash", "regex",
+        "markdown", "markdown_inline", "bash", "regex",
+        -- No "org" here: nvim-treesitter's master registry does not carry it.
+        -- nvim-orgmode installs and owns its own parser, and asking for it
+        -- here leaves ensure_installed waiting on a grammar that never
+        -- arrives.
       },
       auto_install = true,
       highlight = { enable = true },

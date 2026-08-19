@@ -76,6 +76,11 @@ precaution — the unpinned spec was installed, it broke on the first buffer
 read, and pinning is the fix. Revisit when the rewrite grows those modules
 back.
 
+`org` is also absent from `ensure_installed` on purpose: master's registry no
+longer carries that grammar, and nvim-orgmode installs and owns its own. Ask
+for it here and `ensure_installed` waits forever on a parser that never
+arrives — which is exactly how this was found.
+
 ### Deliberately not included
 
 - **hydra.** `hydra.nvim` exists, but which-key in `helix` preset covers the
