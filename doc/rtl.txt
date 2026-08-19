@@ -9,8 +9,9 @@ CONTENTS                                                         *rtl-contents*
     4. Configuration ........................ |rtl-config|
     5. Detection ............................ |rtl-detection|
     6. Terminals and fonts .................. |rtl-terminals|
-    7. Lua API .............................. |rtl-api|
-    8. Testing .............................. |rtl-testing|
+    7. Integrations ......................... |rtl-integrations|
+    8. Lua API .............................. |rtl-api|
+    9. Testing .............................. |rtl-testing|
 
 ==============================================================================
 1. INTRODUCTION                                              *rtl-introduction*
@@ -162,7 +163,64 @@ depends on the font's mark-positioning tables and on whether your terminal
 honours them at all.
 
 ==============================================================================
-7. LUA API                                                            *rtl-api*
+7. INTEGRATIONS                                              *rtl-integrations*
+
+rtl.nvim depends on nothing. Each integration below is guarded by a pcall on
+the target plugin, so it is skipped silently when that plugin is absent --
+including in the test suite, which asserts exactly that.
+
+TELESCOPE                                                  *rtl-telescope*
+
+>lua
+    integrations = {
+      telescope = { enabled = true, keymap = true, rightleft = true },
+    }
+<
+Sets 'keymap' on the TelescopePrompt buffer when the picker was opened from an
+RTL buffer, so you can type Hebrew into a picker without switching your OS
+layout. |i_CTRL-L| inside a picker flips input back to Latin, for finding an
+English filename from inside a Hebrew buffer.
+
+Only the prompt is mirrored. The results and preview windows are
+column-aligned and are left alone; TelescopePrompt and TelescopeResults are
+both in the default `never_rtl` set.
+
+ORGMODE                                                      *rtl-orgmode*
+
+>lua
+    integrations = {
+      orgmode = { enabled = true, agenda_rtl = false },
+    }
+<
+Re-runs detection on the |FileType| event, because orgmode frequently opens
+buffers by means other than :edit and |BufReadPost| can fire before the
+filetype is known. "org" is in the default `prose_filetypes`, so a Hebrew org
+file is detected on contents and a file named `notes.he.org` is forced.
+
+The agenda is deliberately NOT mirrored. It is a generated buffer whose date
+column, tags and filenames are aligned by character position; mirroring it
+destroys that alignment. Set `agenda_rtl = true` if you disagree.
+
+Be aware of what RTL org actually looks like. Structural markers move to the
+right edge -- a heading reads `כותרת **` -- and `#+TITLE:` style keyword lines
+contain Latin runs on an otherwise Hebrew line, so they render reversed. That
+is |rtl-limits| again, not an orgmode problem. Hebrew body text is correct;
+the machinery around it is where you will notice the absent bidi.
+
+NEVER_RTL                                                   *rtl-never-rtl*
+
+Filetypes in `never_rtl` are forced LTR whatever their contents. Defaults are
+orgagenda, help, qf, netrw, TelescopePrompt and TelescopeResults. Add to it
+for any generated buffer that aligns by column.
+
+STATUSLINE                                                 *rtl-statusline*
+
+|rtl.statusline()| returns a short marker for the current window. With
+lualine: >lua
+    sections = { lualine_x = { require("rtl").statusline, "encoding" } }
+<
+==============================================================================
+8. LUA API                                                            *rtl-api*
 
 rtl.setup({opts})                                               *rtl.setup()*
                 Configure and install autocommands. See |rtl-config|.
@@ -185,7 +243,7 @@ rtl.detect({buf}, {sample})                                    *rtl.detect()*
                 Run the heuristic against {buf} without applying anything.
 
 ==============================================================================
-8. TESTING                                                        *rtl-testing*
+9. TESTING                                                        *rtl-testing*
 
 >
     nvim --headless -u NONE -l tests/spec.lua

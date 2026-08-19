@@ -33,10 +33,38 @@ local defaults = {
   toggle_key = "<F8>",
 
   -- Filetypes treated as prose, where a filename tag is honoured.
-  prose_filetypes = { markdown = true, text = true, tex = true, asciidoc = true },
+  prose_filetypes = {
+    markdown = true, text = true, tex = true, asciidoc = true, org = true,
+  },
 
   -- Filename tag that forces RTL for prose filetypes, e.g. notes.he.md
   filename_pattern = "%.he%.",
+
+  -- Filetypes that must never be mirrored, whatever their contents. These are
+  -- generated, column-aligned buffers where 'rightleft' scrambles the layout.
+  never_rtl = {
+    orgagenda = true, help = true, qf = true, netrw = true,
+    TelescopePrompt = true, TelescopeResults = true,
+  },
+
+  -- What rtl.statusline() returns in each state.
+  statusline = { rtl = "עב", ltr = "" },
+
+  -- Optional hooks into other plugins. Each is skipped silently when the
+  -- plugin is not installed; see lua/rtl/integrations/.
+  integrations = {
+    telescope = {
+      enabled = true,
+      keymap = true,     -- type Hebrew into the picker without switching
+                         -- your OS layout
+      rightleft = true,  -- mirror the prompt while RTL is active
+    },
+    orgmode = {
+      enabled = true,
+      agenda_rtl = false,  -- the agenda is column-aligned; mirroring it
+                           -- destroys the alignment
+    },
+  },
 }
 
 M.config = vim.deepcopy(defaults)
@@ -111,6 +139,14 @@ function M.is_rtl(buf)
   return decided[buf or vim.api.nvim_get_current_buf()] == true
 end
 
+--- Statusline component. Add with, for example,
+---   sections = { lualine_x = { require("rtl").statusline } }
+---@return string
+function M.statusline()
+  local s = M.config.statusline or {}
+  return vim.wo.rightleft and (s.rtl or "") or (s.ltr or "")
+end
+
 ---@param opts table|nil
 function M.setup(opts)
   M.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts or {})
@@ -135,6 +171,20 @@ function M.setup(opts)
     })
   end
 
+  -- Generated, column-aligned buffers are never mirrored, whatever they
+  -- contain. Mirroring an agenda or a quickfix list destroys the columns.
+  vim.api.nvim_create_autocmd("FileType", {
+    group = group,
+    callback = function(ev)
+      if c.never_rtl[vim.bo[ev.buf].filetype] then
+        decided[ev.buf] = false
+        if vim.api.nvim_get_current_buf() == ev.buf then
+          M.set(false)
+        end
+      end
+    end,
+  })
+
   -- Re-apply the buffer's decision every time it is displayed. Without this,
   -- opening an LTR file in a window that was showing Hebrew leaves the whole
   -- editor mirrored -- 'rightleft' belongs to the window, not the buffer.
@@ -147,6 +197,8 @@ function M.setup(opts)
     group = group,
     callback = function(ev) decided[ev.buf] = nil end,
   })
+
+  require("rtl.integrations").setup(c)
 end
 
 return M

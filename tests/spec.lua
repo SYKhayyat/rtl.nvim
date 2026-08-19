@@ -65,6 +65,28 @@ print("\nheuristic")
 check("pure hebrew detected", rtl.detect(vim.fn.bufnr(HEB)), true)
 check("pure latin not detected", rtl.detect(vim.fn.bufnr(ENG)), false)
 
+print("\nstatusline")
+open(HEB)
+check("shows the RTL marker", rtl.statusline(), "עב")
+open(ENG)
+check("empty when LTR", rtl.statusline(), "")
+
+print("\nnever_rtl filetypes")
+-- Generated, column-aligned buffers must not be mirrored even if their
+-- contents are mostly Hebrew, or the columns stop lining up.
+vim.cmd("enew")
+vim.api.nvim_buf_set_lines(0, 0, -1, false, { "שלום", "עולם", "עברית" })
+vim.bo.filetype = "orgagenda"
+check("orgagenda stays LTR", vim.wo.rightleft, false)
+
+print("\nintegrations degrade without their plugins")
+local integrations = require("rtl.integrations")
+check("telescope absent is reported", integrations.has("telescope"), false)
+check("orgmode absent is reported", integrations.has("orgmode"), false)
+-- setup() already ran with both integrations enabled; reaching here at all
+-- means neither raised on a missing dependency.
+check("setup survived missing plugins", true, true)
+
 print(string.format("\n%d checks, %d failures", checks, failures))
 if failures > 0 then
   vim.cmd("cquit 1")
