@@ -1,0 +1,5 @@
+number,title,url,D,R,why,risk
+1,[Medium/bug] .he. tag missed filetype not set at BufReadPost,https://github.com/SYKhayyat/rtl.nvim/issues/1,2,3,FileType re-decide; Hebrew RTL visibly not applied,RTL not applied
+2,[Low/bug] set() forces global delcombine,https://github.com/SYKhayyat/rtl.nvim/issues/2,1,3,Setup flag + restore; global option visibly leaks,Global leak visible
+3,[Low/bug] Telescope prompt wrong buffer/window,https://github.com/SYKhayyat/rtl.nvim/issues/3,2,3,Win-specific bufnr/wo; wrong-window opts break visibly,Visible breakage
+4,[Low/bug] Unknown integrations silently ignored,https://github.com/SYKhayyat/rtl.nvim/issues/4,1,2,WARN notify; typo silently does nothing,Silent no-op
